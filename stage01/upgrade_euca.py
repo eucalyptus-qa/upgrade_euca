@@ -108,7 +108,7 @@ def centos_package_upgrade(host):
         ret |= host.run_command("echo -e 'enabled=1\ngpgcheck=0' >> /etc/yum.repos.d/euca2ools.repo")
 
     ret |= host.run_command("yum update -y --nogpgcheck");
-    ret |= host.run_command("v=$( rpm -q --qf '%%{VERSION}' eucalyptus-cloud ); if [ ${v:0:3} == '3.1' ]; then yum install -y eucalyptus-enterprise-vmware-broker eucalyptus-enterprise-storage-san")
+    ret |= host.run_command("v=$( rpm -q --qf '%%{VERSION}' eucalyptus-cloud ); if [ ${v:0:3} == '3.1' ]; then yum install -y eucalyptus-enterprise-vmware-broker eucalyptus-enterprise-storage-san; fi")
 
     return ret
 
