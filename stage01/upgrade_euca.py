@@ -36,6 +36,7 @@ def debian_package_upgrade(host):
 	ret |= host.run_command("apt-get update")
 
         ret |= host.run_command("export DEBIAN_FRONTEND=noninteractive; apt-get install -y --force-yes -o Dpkg::Options::='--force-confnew' $( dpkg -l 'eucalyptus*' | grep 'ii' | awk '{print $2;}' | egrep 'cloud|cc|sc|walrus|broker|nc' )")
+        ret |= host.run_command("export DEBIAN_FRONTEND=noninteractive; dpkg -l eucalyptus-cloud && apt-get install -y --force-yes eucalyptus-enterprise-vmwarebroker eucalyptus-enterprise-storage-san")
 
     return ret
 
@@ -89,14 +90,25 @@ def centos_package_upgrade(host):
             ret |= host.run_command("echo 'baseurl=http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/nightly/main/yum/%s/' >> /etc/yum.repos.d/euca.repo" % distro)
     ret |= host.run_command("echo 'enabled=1' >> /etc/yum.repos.d/euca.repo")
 
-    ### Temp. Sol. add euca2ools repo 020411
+    # Add extra repo for enterprise bits in 3.1
+    if config['memodict'].has_key('EXTRA_UPGRADE_REPO'):
+        ret = host.run_command("touch /etc/yum.repos.d/euca_extra.repo")
+        ret |= host.run_command("echo '[euca_upgrade_extra]' >> /etc/yum.repos.d/euca_extra.repo")
+        ret |= host.run_command("echo 'name=Eucalyptus' >> /etc/yum.repos.d/euca_extra.repo");
+        print "Setting baseurl to %s" % config['memodict']['EXTRA_UPGRADE_REPO'];
+        ret |= host.run_command("echo 'baseurl=%s' >> /etc/yum.repos.d/euca_extra.repo" %
+                                config['memodict']['EXTRA_UPGRADE_REPO'])
+        ret |= host.run_command("echo -e 'enabled=1\ngpgcheck=0' >> /etc/yum.repos.d/euca_extra.repo")
+
     if config['memodict'].has_key('LOCAL_EUCA2OOLS_UPGRADE_REPO'):
         ret |= host.run_command("echo '[euca2ools_upgrade]' >> /etc/yum.repos.d/euca2ools.repo")
         ret |= host.run_command("echo 'name=Euca2ools' >> /etc/yum.repos.d/euca2ools.repo")
         ret |= host.run_command("echo 'baseurl=%s' >> /etc/yum.repos.d/euca2ools.repo" % 
                          config['memodict']['LOCAL_EUCA2OOLS_UPGRADE_REPO'])
         ret |= host.run_command("echo -e 'enabled=1\ngpgcheck=0' >> /etc/yum.repos.d/euca2ools.repo")
-        ret |= host.run_command("yum update -y --nogpgcheck");
+
+    ret |= host.run_command("yum update -y --nogpgcheck");
+    ret |= host.run_command("v=$( rpm -q --qf '%%{VERSION}' eucalyptus-cloud ); if [ ${v:0:3} == '3.1' ]; then yum install -y eucalyptus-enterprise-vmware-broker eucalyptus-enterprise-storage-san")
 
     return ret
 
