@@ -36,7 +36,7 @@ def debian_package_upgrade(host):
 	ret |= host.run_command("apt-get update")
 
         ret |= host.run_command("export DEBIAN_FRONTEND=noninteractive; apt-get install -y --force-yes -o Dpkg::Options::='--force-confnew' $( dpkg -l 'eucalyptus*' | grep 'ii' | awk '{print $2;}' | egrep 'cloud|cc|sc|walrus|broker|nc' )")
-        ret |= host.run_command("export DEBIAN_FRONTEND=noninteractive; dpkg -l eucalyptus-cloud && apt-get install -y --force-yes eucalyptus-enterprise-vmwarebroker eucalyptus-enterprise-storage-san")
+        ret |= host.run_command("export DEBIAN_FRONTEND=noninteractive; dpkg -l eucalyptus-cloud && apt-get install -y --force-yes eucalyptus-enterprise-vmwarebroker eucalyptus-enterprise-storage-san eucalyptus-cloud")
 
     return ret
 
@@ -108,7 +108,7 @@ def centos_package_upgrade(host):
         ret |= host.run_command("echo -e 'enabled=1\ngpgcheck=0' >> /etc/yum.repos.d/euca2ools.repo")
 
     ret |= host.run_command("yum update -y --nogpgcheck");
-    ret |= host.run_command("v=$( rpm -q --qf '%%{VERSION}' eucalyptus-cloud ); if [ ${v:0:3} == '3.1' ]; then yum install -y eucalyptus-enterprise-vmware-broker eucalyptus-enterprise-storage-san; fi")
+    ret |= host.run_command("v=$( rpm -q --qf '%%{VERSION}' eucalyptus-cloud ); if [ ${v:0:3} == '3.1' ]; then yum install -y eucalyptus-enterprise-vmware-broker eucalyptus-enterprise-storage-san eucalyptus-cloud; fi")
 
     return ret
 
