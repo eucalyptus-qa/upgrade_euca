@@ -2,12 +2,21 @@
 
 import sys
 import euca_qa
+import urllib 
 
 # Hard-coded for now
 REPO_API="http://192.168.51.243:5000/genrepo"
 
 def debian_package_upgrade(host):
     ret = 0
+
+    # change a git url to something acceptable to genrepo service
+    git_internal_url = None
+    git_euca_url = config['git_url'].split('/', 2)[-1].replace("/", ":")
+    if git_euca_url.endswith(':internal'):
+        git_internal_url = git_euca_url
+        git_euca_url = git_internal_url.replace(':internal', ':eucalyptus')
+
     if config['memodict'].has_key('LOCAL_UPGRADE_REPO'):
         if host.dist == 'debian':
             host.run_cmd("echo deb %s squeeze main  >> /etc/apt/sources.list" % 
@@ -15,18 +24,29 @@ def debian_package_upgrade(host):
         else:
             host.run_cmd("echo deb %s lucid main universe  >> /etc/apt/sources.list" %
                              config['memodict']['LOCAL_UPGRADE_REPO'])
+    else:
+        repoline = "%s?url=%s&ref=%s&distro=%s&releasever=%s&arch=%s" %
+                   (REPO_API, git_euca_url, config['git_branch'], host.dist, host.arch)ê
+        host.run_cmd(" echo %s >> /etc/apt/sources.list" % urllib.urlopen(repoline).read())
+
+    if git_internal_url is not None:
+        repoline = "%s?url=%s&ref=%s&distro=%s&releasever=%s&arch=%s" %
+                   (REPO_API, git_internal_url, config['git_branch'], host.dist, host.arch)
+        host.run_cmd(" echo %s >> /etc/apt/sources.list" % urllib.urlopen(repoline).read())
 
     if config['memodict'].has_key('LOCAL_EUCA2OOLS_UPGRADE_REPO'):
         if host.dist == 'debian':
             host.run_cmd("echo deb %s squeeze main >> /etc/apt/sources.list" %
                              config['memodict']['LOCAL_EUCA2OOLS_UPGRADE_REPO'])
-	else:
+        else:
             host.run_cmd("echo deb %s lucid main universe >> /etc/apt/sources.list" %
                              config['memodict']['LOCAL_EUCA2OOLS_UPGRADE_REPO'])
-	host.run_cmd("apt-get update")
 
-        # XXX - Removed -o Dpkg::Options::='--force-confnew' here; old upgrades (pre-3.1) need that, though
-        ret |= host.run_cmd("export DEBIAN_FRONTEND=noninteractive; apt-get install -y --force-yes $( dpkg -l 'eucalyptus*' | grep 'ii' | awk '{print $2;}' | egrep 'cloud|cc|sc|walrus|broker|nc' )")
+    host.run_cmd("apt-get update")
+
+    # XXX - Removed -o Dpkg::Options::='--force-confnew' here; old upgrades (pre-3.1) need that, though
+    host.run_cmd("export DEBIAN_FRONTEND=noninteractive; apt-get install -y --force-yes $( dpkg -l 'eucalyptus*' | grep 'ii' | awk '{print $2;}' | egrep 'cloud|cc|sc|walrus|broker|nc' )")
+    if git_internal_url is not None:
         ret |= host.run_cmd("export DEBIAN_FRONTEND=noninteractive; dpkg -l eucalyptus-cloud && apt-get install -y --force-yes eucalyptus-enterprise-vmwarebroker eucalyptus-enterprise-storage-san eucalyptus-cloud")
 
     return ret
