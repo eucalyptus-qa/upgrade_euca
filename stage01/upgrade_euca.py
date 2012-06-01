@@ -43,7 +43,7 @@ def debian_package_upgrade(host):
                              config['memodict']['LOCAL_EUCA2OOLS_UPGRADE_REPO'])
 
     host.run_cmd("apt-get update")
-    host.run_cmd("apt-get -o Dpkg::Options::='--force-confold' -y --force-yes dist-upgrade ")
+    # host.run_cmd("apt-get -o Dpkg::Options::='--force-confold' -y --force-yes dist-upgrade ")
 
     # XXX - Removed -o Dpkg::Options::='--force-confnew' here; old upgrades (pre-3.1) need that, though
     host.run_cmd("export DEBIAN_FRONTEND=noninteractive; apt-get install -y --force-yes $( dpkg -l 'eucalyptus*' | grep 'ii' | awk '{print $2;}' | egrep 'cloud|cc|sc|walrus|broker|nc' )")
