@@ -25,14 +25,18 @@ def debian_package_upgrade(host):
             host.run_cmd("echo deb %s lucid main universe  >> /etc/apt/sources.list" % 
                              config['memodict']['LOCAL_UPGRADE_REPO'])
     else:
-        repoline = "%s?url=%s&ref=%s&distro=%s&releasever=%s&arch=%s" % \
+        repoquery = "%s?url=%s&ref=%s&distro=%s&releasever=%s&arch=%s" % \
                    (REPO_API, git_euca_url, config['git_branch'], host.dist, host.release, host.arch)
-        host.run_cmd(" echo %s >> /etc/apt/sources.list" % urllib.urlopen(repoline).read())
+        repoline = urllib.urlopen(repoquery).read()
+        print repoline
+        host.run_cmd(" echo %s >> /etc/apt/sources.list" % repoline)
 
     if git_internal_url is not None:
-        repoline = "%s?url=%s&ref=%s&distro=%s&releasever=%s&arch=%s" % \
+        repoquery = "%s?url=%s&ref=%s&distro=%s&releasever=%s&arch=%s" % \
                    (REPO_API, git_internal_url, config['git_branch'], host.dist, host.release, host.arch)
-        host.run_cmd(" echo %s >> /etc/apt/sources.list" % urllib.urlopen(repoline).read())
+        repoline = urllib.urlopen(repoquery).read()
+        print repoline
+        host.run_cmd(" echo %s >> /etc/apt/sources.list" % repoline)
 
     if config['memodict'].has_key('LOCAL_EUCA2OOLS_UPGRADE_REPO'):
         if host.dist == 'debian':
@@ -46,7 +50,7 @@ def debian_package_upgrade(host):
     # host.run_cmd("apt-get -o Dpkg::Options::='--force-confold' -y --force-yes dist-upgrade ")
 
     # XXX - Removed -o Dpkg::Options::='--force-confnew' here; old upgrades (pre-3.1) need that, though
-    host.run_cmd("export DEBIAN_FRONTEND=noninteractive; apt-get install -y --force-yes $( dpkg -l 'eucalyptus*' | grep 'ii' | awk '{print $2;}' | egrep 'cloud|cc|sc|walrus|broker|nc' )")
+    host.run_cmd("export DEBIAN_FRONTEND=noninteractive; apt-get install -o Dpkg::Options::='--force-confold' -y --force-yes $( dpkg -l 'eucalyptus*' | grep 'ii' | awk '{print $2;}' | egrep 'cloud|cc|sc|walrus|broker|nc' ) %s" % host.has_role("clc" and "eucalyptus-cloud" or ""))
     if git_internal_url is not None and host.has_role('clc'):
         ret |= host.run_cmd("export DEBIAN_FRONTEND=noninteractive; dpkg -l eucalyptus-cloud && apt-get install -y --force-yes eucalyptus-enterprise-vmware-broker eucalyptus-enterprise-storage-san eucalyptus-cloud")
 
