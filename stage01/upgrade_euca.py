@@ -51,6 +51,8 @@ def debian_package_upgrade(host):
     host.run_cmd("export DEBIAN_FRONTEND=noninteractive; apt-get install -o Dpkg::Options::='--force-confold' -y --force-yes $( dpkg -l 'eucalyptus*' | grep 'ii' | awk '{print $2;}' | egrep 'cloud|cc|sc|walrus|broker|nc' ) %s" % (host.has_role("clc") and "eucalyptus-cloud" or ""))
     if git_internal_url is not None and host.has_role('clc'):
         host.run_cmd("export DEBIAN_FRONTEND=noninteractive; dpkg -l eucalyptus-cloud && apt-get install -y --force-yes eucalyptus-enterprise-vmware-broker eucalyptus-enterprise-storage-san eucalyptus-cloud")
+    elif git_internal_url is not None and host.has_role('sc'):
+        host.run_cmd("export DEBIAN_FRONTEND=noninteractive; apt-get install -y --force-yes eucalyptus-enterprise-storage-san")
 
     return ret
 
@@ -86,7 +88,7 @@ def centos_package_upgrade(host):
         if config['memodict'].has_key('ENT_UPGRADE_REPO'):
             host.run_cmd("echo 'baseurl=%s' >> %s" %
                              (config['memodict']['ENT_UPGRADE_REPO'], repofile))
-        else:
+        elif git_internal_url is not None:
             host.run_cmd("echo 'mirrorlist=%s?url=%s&ref=%s&distro=%s&releasever=$releasever&arch=$basearch' >> %s" %
                              (REPO_API, git_internal_url, config['git_branch'], host.dist, repofile) )
         host.run_cmd("echo -e 'enabled=1\ngpgcheck=0' >> " + repofile)
@@ -102,6 +104,8 @@ def centos_package_upgrade(host):
     host.run_cmd("yum update -y --nogpgcheck");
     if host.has_role('clc'):
         host.run_cmd("v=$( rpm -q --qf '%{VERSION}' eucalyptus ); if [ ${v:0:3} == '3.1' ]; then yum groupinstall -y eucalyptus-cloud-controller --nogpgcheck; fi")
+    elif host_has_role('sc') and git_internal_url is not None:
+        host.run_cmd("yum install -y --nogpgcheck eucalyptus-enterprise-storage-san")
 
     return ret
 
