@@ -104,7 +104,7 @@ def centos_package_upgrade(host):
     host.run_cmd("yum update -y --nogpgcheck");
     if host.has_role('clc'):
         host.run_cmd("v=$( rpm -q --qf '%{VERSION}' eucalyptus ); if [ ${v:0:3} == '3.1' ]; then yum groupinstall -y eucalyptus-cloud-controller --nogpgcheck; fi")
-    elif host_has_role('sc') and git_internal_url is not None:
+    elif host.has_role('sc') and git_internal_url is not None:
         host.run_cmd("yum install -y --nogpgcheck eucalyptus-enterprise-storage-san")
 
     return ret
