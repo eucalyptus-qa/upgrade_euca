@@ -24,6 +24,8 @@ def debian_package_upgrade(host):
         else:
             host.run_cmd("echo deb %s lucid main universe  >> /etc/apt/sources.list" % 
                              config['memodict']['LOCAL_UPGRADE_REPO'])
+    elif git_internal_url is not None:
+        host.run_cmd("awk '/^EUCA_PKG_REPO/ { print $2,$3,$4,$5; }' /root/euca_builder/git_log.txt >> /etc/apt/sources.list")
     else:
         repoquery = "%s?url=%s&ref=%s&distro=%s&releasever=%s&arch=%s" % \
                    (REPO_API, git_euca_url, config['git_branch'], host.dist, host.release, host.arch)
@@ -73,11 +75,16 @@ def centos_package_upgrade(host):
         print "Setting baseurl to %s" % config['memodict']['LOCAL_UPGRADE_REPO'];
         host.run_cmd("echo 'baseurl=%s' >> %s" %
                                 (config['memodict']['LOCAL_UPGRADE_REPO'], repofile))
+    elif git_internal_url is not None:
+        [status, out, err] = host.run_command("awk '/^EUCA_PKG_REPO/ { print $2; }' /root/euca_builder/git_log.txt",
+                                              return_output=True)
+        print "Setting baseurl to %s" % out.strip()
+        host.run_cmd("echo 'baseurl=%s' >> %s" % (out.strip(), repofile))
     else:
         mirrorurl = "%s?url=%s&ref=%s&distro=%s&releasever=$releasever&arch=$basearch" % (REPO_API, git_euca_url, config['git_branch'], host.dist)
         print "Setting mirrorurl to %s" % mirrorurl
         host.run_cmd("echo 'mirrorlist=%s' >> %s" % (mirrorurl, repofile))
-    host.run_cmd("echo 'enabled=1' >> " + repofile)
+    host.run_cmd("echo 'enabled=1\ngpgcheck=0' >> " + repofile)
 
     # Add extra repo for enterprise bits in 3.1
     if git_internal_url is not None or config['memodict'].has_key('ENT_UPGRADE_REPO'):
