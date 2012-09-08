@@ -5,7 +5,8 @@ import euca_qa
 import urllib 
 
 # Hard-coded for now
-REPO_API="http://192.168.51.243:5000/genrepo"
+#REPO_API="http://192.168.51.243:5000/genrepo"
+REPO_API="http://packages.release.eucalyptus-systems.com/genrepo"
 
 def debian_package_upgrade(host):
     ret = 0
