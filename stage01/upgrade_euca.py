@@ -49,6 +49,10 @@ def debian_package_upgrade(host):
             host.run_cmd("echo deb %s lucid main universe >> /etc/apt/sources.list" %
                              config['memodict']['LOCAL_EUCA2OOLS_UPGRADE_REPO'])
 
+    ###	ADDED for 3.1.2 NEW REPO	- KYO 091312
+    host.run_cmd("gpg --keyserver pgp.mit.edu --recv-keys BE264D09C1240596")
+    host.run_cmd("gpg --armor --export BE264D09C1240596 | apt-key add -")
+
     host.run_cmd("apt-get update")
 
     host.run_cmd("export DEBIAN_FRONTEND=noninteractive; apt-get install -o Dpkg::Options::='--force-confold' -y --force-yes $( dpkg -l 'eucalyptus*' | grep 'ii' | awk '{print $2;}' | egrep 'cloud|cc|sc|walrus|broker|nc' ) %s" % (host.has_role("clc") and "eucalyptus-cloud" or ""))
